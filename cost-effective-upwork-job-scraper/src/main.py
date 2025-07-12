@@ -27,7 +27,16 @@ async def main() -> None:
         try:
             search_url = await build_search_url(keyword, location)
             await log_progress(f"Navigating to search URL: {search_url}")
-            await retry_on_failure(navigate_to_search_page, page, search_url)
+            try:
+                await retry_on_failure(navigate_to_search_page, page, search_url)
+            except Exception as nav_exc:
+                # Check for Cloudflare or anti-bot page
+                page_content = await page.content()
+                if "cloudflare" in page_content.lower() or "attention required" in page_content.lower():
+                    await log_progress("Navigation failed due to Cloudflare or anti-bot protection.")
+                else:
+                    await log_progress(f"Navigation failed: {nav_exc}")
+                await Actor.exit()
             html = await page.content()
             jobs = await parse_job_listings(html)
             await log_progress(f"Found {len(jobs)} jobs on search page.")

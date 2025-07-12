@@ -6,9 +6,12 @@ from urllib.parse import quote_plus
 async def build_search_url(keyword: str, location: str) -> str:
     """
     Constructs a URL-encoded Upwork search URL from keyword and location.
+    The location is double-encoded to match observed Upwork navigation (e.g., United%2520States).
     """
     base_url = "https://www.upwork.com/nx/jobs/search/"
-    params = f"?q={quote_plus(keyword)}&location={quote_plus(location)}"
+    # Double-encode location as requested
+    encoded_location = quote_plus(quote_plus(location))
+    params = f"?q={quote_plus(keyword)}&location={encoded_location}"
     return base_url + params
 
 async def navigate_to_search_page(page, url: str):
