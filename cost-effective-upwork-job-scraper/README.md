@@ -11,7 +11,7 @@ A scalable, human-like Upwork job scraper built as an Apify Actor using Playwrig
 - Modular code: browser, navigator, parser, job_detail, utils
 - Logs progress per job for debugging
 - Retry logic for failures or bot detection
-- Output: full job details (see below)
+- **Two-tier scraping**: Search results (no auth) + Detailed job info (with auth)
 
 ## Inputs
 | Field    | Type   | Required | Description                       |
@@ -19,7 +19,23 @@ A scalable, human-like Upwork job scraper built as an Apify Actor using Playwrig
 | keyword  | string | ✅        | Job title or keyword (e.g., "python dev") |
 | location | string | ✅        | Geographic filter (e.g., "United States") |
 
-## Outputs (per job)
+## Outputs
+
+### Search Results (Always Available - No Cookies Required)
+```
+{
+  "jobTitle": "Data Analyst Needed for Market Research",
+  "jobLink": "https://www.upwork.com/job/...",
+  "jobId": "3821938712",
+  "postedTime": "2 hours ago",
+  "budget": "$300",
+  "projectType": "One-time project",
+  "experienceLevel": "Intermediate",
+  "skillsRequired": ["Python", "Excel", "SQL"]
+}
+```
+
+### Detailed Job Info (Requires Authentication/Cookies)
 ```
 {
   "jobTitle": "Data Analyst Needed for Market Research",
@@ -39,6 +55,12 @@ A scalable, human-like Upwork job scraper built as an Apify Actor using Playwrig
   "jobId": "3821938712"
 }
 ```
+
+## Important Notes
+- **Search Results**: Always available without authentication
+- **Detailed Job Info**: May require Upwork login/cookies for full access
+- **Fallback Strategy**: If detailed scraping fails, basic search results are still provided
+- **Rate Limiting**: Detailed scraping is limited to first 5 jobs to avoid detection
 
 ## Architecture
 ```
@@ -73,3 +95,4 @@ cost-effective-upwork-job-scraper/
 - Logging is modular and centralized for job-level/system-level tracing.
 - Easy to expand with new fields or scrape strategies.
 - Clear input/output schema for validation and integration.
+- **Cookie Management**: For enhanced detailed scraping, consider implementing cookie/session management.

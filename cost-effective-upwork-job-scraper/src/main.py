@@ -9,7 +9,7 @@ from .browser import launch_stealth_browser
 from .navigator import build_search_url, navigate_to_search_page
 from .parser import parse_job_listings
 from .job_detail import parse_job_detail
-from .utils import log_progress, retry_on_failure
+from .utils import log_progress, retry_on_failure, is_login_required
 import asyncio
 
 async def main() -> None:
@@ -31,24 +31,50 @@ async def main() -> None:
             html = await page.content()
             jobs = await parse_job_listings(html)
             await log_progress(f"Found {len(jobs)} jobs on search page.")
-            results = []
+            
+            # Output search results data (available without cookies)
             for job in jobs:
+                await log_progress(f"Scraped job listing: {job.get('jobTitle')}")
+                await Actor.push_data(job)
+            
+            # Attempt to scrape detailed job information (may require cookies)
+            await log_progress("Attempting to scrape detailed job information...")
+            await log_progress("Note: Detailed job info may require authentication/cookies")
+            
+            detailed_results = []
+            for i, job in enumerate(jobs[:5]):  # Limit to first 5 jobs to avoid rate limiting
                 job_link = job.get("jobLink")
                 if not job_link:
                     continue
-                await log_progress(f"Navigating to job: {job_link}")
-                await retry_on_failure(page.goto, job_link, wait_until="networkidle")
-                await asyncio.sleep(2)  # Human-like delay
-                job_html = await page.content()
-                job_details = await parse_job_detail(job_html)
-                # Merge summary fields (jobTitle, jobLink, jobId) with details
-                job_details["jobTitle"] = job.get("jobTitle") or job_details.get("jobTitle")
-                job_details["jobLink"] = job_link
-                job_details["jobId"] = job.get("jobId") or job_details.get("jobId")
-                await log_progress(f"Scraped job: {job_details.get('jobTitle')}")
-                await Actor.push_data(job_details)
-                results.append(job_details)
-            await log_progress(f"Scraping complete. Total jobs scraped: {len(results)}")
+                    
+                await log_progress(f"Attempting to access job detail: {job_link}")
+                try:
+                    await retry_on_failure(page.goto, job_link, wait_until="networkidle")
+                    await asyncio.sleep(2)  # Human-like delay
+                    job_html = await page.content()
+                    
+                    # Check if we got redirected to login page
+                    if is_login_required(page.url):
+                        await log_progress(f"Redirected to login page for job {i+1}. Authentication required for detailed info.")
+                        continue
+                    
+                    job_details = await parse_job_detail(job_html)
+                    
+                    # Merge search result data with detailed data
+                    merged_job = {**job, **job_details}
+                    await log_progress(f"Successfully scraped detailed info for: {merged_job.get('jobTitle')}")
+                    await Actor.push_data(merged_job)
+                    detailed_results.append(merged_job)
+                    
+                except Exception as e:
+                    await log_progress(f"Failed to scrape job detail {i+1}: {str(e)}")
+                    # Still output the basic job info we have
+                    await Actor.push_data(job)
+            
+            await log_progress(f"Scraping complete. Total jobs scraped: {len(jobs)}")
+            await log_progress(f"Detailed info successfully scraped: {len(detailed_results)}")
+            await log_progress("Note: For full detailed scraping, consider using authenticated sessions/cookies")
+            
         finally:
             await browser.close()
             await playwright.stop()
