@@ -28,10 +28,18 @@ async def main() -> None:
             search_url = await build_search_url(keyword, location)
             await log_progress(f"Navigating to search URL: {search_url}")
             try:
+                import time
+                start_time = time.time()
                 await retry_on_failure(navigate_to_search_page, page, search_url)
+                elapsed = time.time() - start_time
+                page_title = await page.title()
+                page_url = page.url
+                await log_progress(f"After navigation attempt: Page title='{page_title}', URL='{page_url}', waited {elapsed:.2f} seconds.")
             except Exception as nav_exc:
-                # Check for Cloudflare or anti-bot page
                 page_content = await page.content()
+                page_title = await page.title()
+                page_url = page.url
+                await log_progress(f"Navigation failed after {time.time() - start_time:.2f} seconds. Page title='{page_title}', URL='{page_url}'")
                 if "cloudflare" in page_content.lower() or "attention required" in page_content.lower():
                     await log_progress("Navigation failed due to Cloudflare or anti-bot protection.")
                 else:
