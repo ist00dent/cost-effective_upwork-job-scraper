@@ -27,24 +27,36 @@ async def main() -> None:
         try:
             search_url = await build_search_url(keyword, location)
             await log_progress(f"Navigating to search URL: {search_url}")
-            try:
-                import time
-                start_time = time.time()
-                await retry_on_failure(navigate_to_search_page, page, search_url)
-                elapsed = time.time() - start_time
-                page_title = await page.title()
-                page_url = page.url
-                await log_progress(f"After navigation attempt: Page title='{page_title}', URL='{page_url}', waited {elapsed:.2f} seconds.")
-            except Exception as nav_exc:
-                page_content = await page.content()
-                page_title = await page.title()
-                page_url = page.url
-                await log_progress(f"Navigation failed after {time.time() - start_time:.2f} seconds. Page title='{page_title}', URL='{page_url}'")
-                if "cloudflare" in page_content.lower() or "attention required" in page_content.lower():
-                    await log_progress("Navigation failed due to Cloudflare or anti-bot protection.")
-                else:
-                    await log_progress(f"Navigation failed: {nav_exc}")
-                await Actor.exit()
+            max_retries = 2
+            for attempt in range(1, max_retries + 2):
+                try:
+                    import time
+                    start_time = time.time()
+                    await retry_on_failure(navigate_to_search_page, page, search_url)
+                    elapsed = time.time() - start_time
+                    page_title = await page.title()
+                    page_url = page.url
+                    await log_progress(f"After navigation attempt: Page title='{page_title}', URL='{page_url}', waited {elapsed:.2f} seconds.")
+                    break  # Success, exit retry loop
+                except Exception as nav_exc:
+                    page_content = await page.content()
+                    page_title = await page.title()
+                    page_url = page.url
+                    await log_progress(f"Navigation failed after {time.time() - start_time:.2f} seconds. Page title='{page_title}', URL='{page_url}'")
+                    if "cloudflare" in page_content.lower() or "attention required" in page_content.lower():
+                        await log_progress(f"Navigation failed due to Cloudflare or anti-bot protection. Restarting browser (attempt {attempt})...")
+                        if attempt < max_retries + 1:
+                            await browser.close()
+                            await playwright.stop()
+                            playwright, browser, context = await launch_stealth_browser()
+                            page = await context.new_page()
+                            continue
+                        else:
+                            await log_progress("Max browser restarts reached. Exiting.")
+                            await Actor.exit()
+                    else:
+                        await log_progress(f"Navigation failed: {nav_exc}")
+                        await Actor.exit()
             html = await page.content()
             jobs = await parse_job_listings(html)
             await log_progress(f"Found {len(jobs)} jobs on search page.")
