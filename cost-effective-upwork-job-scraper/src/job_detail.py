@@ -1,63 +1,154 @@
 """
 Logic to scrape individual Upwork job details.
 """
-from bs4 import BeautifulSoup
-from bs4 import Tag
+from bs4 import BeautifulSoup, Tag
 
 async def parse_job_detail(html: str):
     """
     Parses the full job detail page HTML and returns a dict with all required fields.
     """
     soup = BeautifulSoup(html, "html.parser")
-    # Extract job title
-    job_title = soup.find("h1", {"data-test": "job-title"})
-    job_title = job_title.get_text(strip=True) if job_title else None
-    # Extract description
-    desc = soup.find("div", {"data-test": "job-description-text"})
-    description = desc.get_text(strip=True) if desc else None
+    
+    # Extract job title - try multiple selectors
+    job_title = None
+    title_selectors = [
+        "h1[data-test='job-title']",
+        "h1.job-title",
+        "h1",
+        "[data-test='job-title']"
+    ]
+    for selector in title_selectors:
+        title_elem = soup.select_one(selector)
+        if title_elem:
+            job_title = title_elem.get_text(strip=True)
+            break
+    
+    # Extract description - try multiple selectors
+    description = None
+    desc_selectors = [
+        "[data-test='job-description-text']",
+        ".job-description",
+        ".description",
+        "[data-test='job-description']"
+    ]
+    for selector in desc_selectors:
+        desc_elem = soup.select_one(selector)
+        if desc_elem:
+            description = desc_elem.get_text(strip=True)
+            break
+    
     # Extract category
     category = None
-    cat_tag = soup.find("a", {"data-test": "job-category"})
-    if cat_tag:
-        category = cat_tag.get_text(strip=True)
+    cat_selectors = [
+        "a[data-test='job-category']",
+        ".job-category",
+        "[data-test='job-category']"
+    ]
+    for selector in cat_selectors:
+        cat_elem = soup.select_one(selector)
+        if cat_elem:
+            category = cat_elem.get_text(strip=True)
+            break
+    
     # Extract client location
     client_location = None
-    loc_tag = soup.find("strong", {"data-test": "client-location"})
-    if loc_tag:
-        client_location = loc_tag.get_text(strip=True)
+    loc_selectors = [
+        "strong[data-test='client-location']",
+        ".client-location",
+        "[data-test='client-location']"
+    ]
+    for selector in loc_selectors:
+        loc_elem = soup.select_one(selector)
+        if loc_elem:
+            client_location = loc_elem.get_text(strip=True)
+            break
+    
     # Extract client details
     client_details = {}
-    spent = soup.find("span", {"data-test": "client-spend"})
-    jobs_posted = soup.find("span", {"data-test": "client-jobs-posted"})
-    hire_rate = soup.find("span", {"data-test": "client-hire-rate"})
-    if spent:
-        client_details["totalSpent"] = spent.get_text(strip=True)
-    if jobs_posted:
-        client_details["jobsPosted"] = jobs_posted.get_text(strip=True)
-    if hire_rate:
-        client_details["hireRate"] = hire_rate.get_text(strip=True)
+    client_selectors = {
+        "totalSpent": ["span[data-test='client-spend']", ".client-spend"],
+        "jobsPosted": ["span[data-test='client-jobs-posted']", ".client-jobs-posted"],
+        "hireRate": ["span[data-test='client-hire-rate']", ".client-hire-rate"]
+    }
+    
+    for key, selectors in client_selectors.items():
+        for selector in selectors:
+            elem = soup.select_one(selector)
+            if elem:
+                client_details[key] = elem.get_text(strip=True)
+                break
+    
     # Extract budget
     budget = None
-    budget_tag = soup.find("span", {"data-test": "job-budget"})
-    if budget_tag:
-        budget = budget_tag.get_text(strip=True)
+    budget_selectors = [
+        "span[data-test='job-budget']",
+        ".job-budget",
+        "[data-test='job-budget']"
+    ]
+    for selector in budget_selectors:
+        budget_elem = soup.select_one(selector)
+        if budget_elem:
+            budget = budget_elem.get_text(strip=True)
+            break
+    
     # Extract project type
     project_type = None
-    proj_type_tag = soup.find("span", {"data-test": "job-type"})
-    if proj_type_tag:
-        project_type = proj_type_tag.get_text(strip=True)
+    proj_selectors = [
+        "span[data-test='job-type']",
+        ".job-type",
+        "[data-test='job-type']"
+    ]
+    for selector in proj_selectors:
+        proj_elem = soup.select_one(selector)
+        if proj_elem:
+            project_type = proj_elem.get_text(strip=True)
+            break
+    
     # Extract posted time
     posted_time = None
-    posted_tag = soup.find("span", {"data-test": "job-posted"})
-    if posted_tag:
-        posted_time = posted_tag.get_text(strip=True)
+    posted_selectors = [
+        "span[data-test='job-posted']",
+        ".job-posted",
+        "[data-test='job-posted']"
+    ]
+    for selector in posted_selectors:
+        posted_elem = soup.select_one(selector)
+        if posted_elem:
+            posted_time = posted_elem.get_text(strip=True)
+            break
+    
     # Extract skills
-    skills = [s.get_text(strip=True) for s in soup.find_all("a", {"data-test": "job-skill"})]
-    # Extract jobId (from meta or url, fallback to None)
+    skills = []
+    skill_selectors = [
+        "a[data-test='job-skill']",
+        ".job-skill",
+        "[data-test='job-skill']",
+        ".skill-tag"
+    ]
+    for selector in skill_selectors:
+        skill_elems = soup.select(selector)
+        for skill_elem in skill_elems:
+            skill_text = skill_elem.get_text(strip=True)
+            if skill_text and skill_text not in skills:
+                skills.append(skill_text)
+        if skills:  # If we found skills with this selector, break
+            break
+    
+    # Extract jobId from meta or URL
     job_id = None
     meta_id = soup.find("meta", {"name": "upwork:job_id"})
     if isinstance(meta_id, Tag):
         job_id = meta_id.get("content")
+    
+    # If no job_id from meta, try to extract from URL
+    if not job_id:
+        # Look for job ID in the page URL or other elements
+        url_elem = soup.find("link", {"rel": "canonical"})
+        if url_elem and isinstance(url_elem, Tag):
+            url = url_elem.get("href", "")
+            if isinstance(url, str) and "~" in url:
+                job_id = url.split("~")[-1].split("/")[0]
+    
     return {
         "jobTitle": job_title,
         "description": description,
