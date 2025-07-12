@@ -1,0 +1,28 @@
+{
+  "name": "cost-effective_upwork-job-scraper",
+  "title": "Cost-Effective Upwork Job Scraper",
+  "description": "A scalable, human-like Upwork job scraper using Playwright and Apify Actor. Scrapes job listings with keyword and location filters, providing both search results and detailed job information.",
+  "version": "0.1.0",
+  "buildTag": "latest",
+  "env": null,
+  "input": {
+    "title": "Input schema for Upwork Job Scraper",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {
+      "keyword": {
+        "title": "Keyword",
+        "type": "string",
+        "description": "Job title or keyword (e.g., 'python dev')",
+        "editor": "textfield"
+      },
+      "location": {
+        "title": "Location",
+        "type": "string",
+        "description": "Geographic filter (e.g., 'United States')",
+        "editor": "textfield"
+      }
+    },
+    "required": ["keyword", "location"]
+  }
+} 

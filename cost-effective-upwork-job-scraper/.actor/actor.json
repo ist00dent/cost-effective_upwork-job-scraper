@@ -1,13 +1,13 @@
 {
-	"actorSpecification": 1,
-	"name": "cost-effective-upwork-job-scraper",
-	"title": "Getting started with Python and BeautifulSoup",
-	"description": "Scrapes titles of websites using BeautifulSoup.",
-	"version": "0.0",
-	"buildTag": "latest",
-	"meta": {
-		"templateId": "python-beautifulsoup"
-	},
-	"input": "./input_schema.json",
-	"dockerfile": "../Dockerfile"
+  "actorSpecification": 1,
+  "name": "cost-effective_upwork-job-scraper",
+  "title": "Cost-Effective Upwork Job Scraper",
+  "description": "A scalable, human-like Upwork job scraper using Playwright and Apify Actor. Scrapes job listings with keyword and location filters, providing both search results and detailed job information.",
+  "version": "0.1.0",
+  "buildTag": "latest",
+  "meta": {
+    "templateId": "python-beautifulsoup"
+  },
+  "input": "./input_schema.json",
+  "dockerfile": "../Dockerfile"
 }

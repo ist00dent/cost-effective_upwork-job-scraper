@@ -6,12 +6,14 @@
     "keyword": {
       "title": "Keyword",
       "type": "string",
-      "description": "Job title or keyword (e.g., 'python dev')"
+      "description": "Job title or keyword (e.g., 'python dev')",
+      "editor": "textfield"
     },
     "location": {
       "title": "Location",
       "type": "string",
-      "description": "Geographic filter (e.g., 'United States')"
+      "description": "Geographic filter (e.g., 'United States')",
+      "editor": "textfield"
     }
   },
   "required": ["keyword", "location"]
