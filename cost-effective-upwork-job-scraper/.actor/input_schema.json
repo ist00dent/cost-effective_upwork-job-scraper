@@ -1,0 +1,18 @@
+{
+  "title": "Input schema for Upwork Job Scraper",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "keyword": {
+      "title": "Keyword",
+      "type": "string",
+      "description": "Job title or keyword (e.g., 'python dev')"
+    },
+    "location": {
+      "title": "Location",
+      "type": "string",
+      "description": "Geographic filter (e.g., 'United States')"
+    }
+  },
+  "required": ["keyword", "location"]
+}

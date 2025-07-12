@@ -1,0 +1,5 @@
+apify-client
+apify-shared
+apify
+playwright
+beautifulsoup4
