@@ -9,23 +9,28 @@ from .browser import launch_stealth_browser
 from .navigator import build_search_url, navigate_to_search_page
 from .parser import parse_job_listings
 from .job_detail import parse_job_detail
-from .utils import log_progress, retry_on_failure, is_login_required
+from .utils import log_progress, retry_on_failure, is_login_required, load_cookies
 import asyncio
 
 async def main() -> None:
     async with Actor:
         actor_input = await Actor.get_input() or {}
-        keyword = str(actor_input.get("keyword", ""))
+        query = str(actor_input.get("query", ""))
         location = str(actor_input.get("location", ""))
-        if not keyword or not location:
-            await log_progress("Missing required input: keyword or location.")
+        if not query or not location:
+            await log_progress("Missing required input: query or location.")
             await Actor.exit()
 
-        await log_progress(f"Launching browser for keyword='{keyword}', location='{location}'...")
+        await log_progress(f"Launching browser for query='{query}', location='{location}'...")
         playwright, browser, context = await launch_stealth_browser()
+        cookies = await load_cookies(actor_input)
+        if cookies:
+            await context.add_cookies(cookies)
+            await log_progress(f"Injected {len(cookies)} cookies into browser context.")
+
         page = await context.new_page()
         try:
-            search_url = await build_search_url(keyword, location)
+            search_url = await build_search_url(query, location)
             await log_progress(f"Navigating to search URL: {search_url}")
             max_retries = 2
             for attempt in range(1, max_retries + 2):

@@ -1,20 +1,27 @@
 {
-  "title": "Input schema for Upwork Job Scraper",
-  "type": "object",
-  "schemaVersion": 1,
-  "properties": {
-    "keyword": {
-      "title": "Keyword",
-      "type": "string",
-      "description": "Job title or keyword (e.g., 'python dev')",
-      "editor": "textfield"
+    "title": "Input schema for Upwork Job Scraper",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {
+      "query": {
+        "title": "Query",
+        "type": "string",
+        "description": "Job title or keyword (e.g., 'python dev')",
+        "editor": "textfield"
+      },
+      "location": {
+        "title": "Location",
+        "type": "string",
+        "description": "Geographic filter (e.g., 'United States')",
+        "editor": "textfield"
+      },
+      "cookies": {
+        "title": "Cookies (optional, JSON array as string)",
+        "type": "string",
+        "description": "Paste JSON array of cookies (e.g. [{\"name\": ..., \"value\": ...}])",
+        "editor": "textarea"
+      }
     },
-    "location": {
-      "title": "Location",
-      "type": "string",
-      "description": "Geographic filter (e.g., 'United States')",
-      "editor": "textfield"
-    }
-  },
-  "required": ["keyword", "location"]
-}
+    "required": ["query", "location"]
+  }
+  
