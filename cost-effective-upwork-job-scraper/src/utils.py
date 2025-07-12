@@ -1,16 +1,14 @@
 """
 Shared helpers for logging, formatting, and retry logic.
 """
-import logging
 import asyncio
-
-logger = logging.getLogger("upwork_scraper")
+from apify import Actor  # type: ignore  # For linter: apify is installed at runtime
 
 async def log_progress(message: str):
     """
-    Logs progress for debugging and tracing.
+    Logs progress for debugging and tracing using Apify's built-in logging.
     """
-    logger.info(message)
+    await Actor.log.info(message)
 
 async def retry_on_failure(func, *args, retries=3, delay=2, **kwargs):
     """
@@ -21,7 +19,7 @@ async def retry_on_failure(func, *args, retries=3, delay=2, **kwargs):
         try:
             return await func(*args, **kwargs)
         except Exception as e:
-            logger.warning(f"Attempt {attempt} failed: {e}")
+            await Actor.log.warning(f"Attempt {attempt} failed: {e}")
             if attempt == retries:
                 raise
             await asyncio.sleep(delay * attempt)
